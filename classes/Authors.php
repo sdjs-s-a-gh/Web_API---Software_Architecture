@@ -41,7 +41,8 @@ class Authors extends Endpoint
      * given number.
      * 
      * @throws PDOException If there is a database query error.
-     * @throws ClientError If any of the parameters are invalid.
+     * @throws ClientError If no parameters are provided or if they are
+     * invalid.
      */
     protected function get(): void
     {   
@@ -49,61 +50,21 @@ class Authors extends Endpoint
         $sql_query = "SELECT author.id, author.name FROM author";
 
         $query_params = $this->request->get_query_parameters();
-        $sql_params = [];        
-        $sql_filter = [];
         
-        // data
-        if (count($query_params) === 0) {
-            throw new ClientError("No parameters provided.", 400);
-        }
+        $valid_params = [
+            "author_id" => " author.id = :author_id",
+            "content_id" => " content_has_author.content = :content_id",
+            "search" => " author.name LIKE :search",
+            "page" => " LIMIT 10 OFFSET :offset"
+        ];
 
-        $valid_params = ["author_id", "content_id", "search", "page"];
+        $required_joins = [
+            "content_id" => " JOIN content_has_author ON author.id = content_has_author.author"
+        ];
 
-        // unexpected key
-        $this->validate_params($query_params, $valid_params);
+        [$query_to_append, $sql_params] = $this->set_universal_params($query_params, $valid_params, $required_joins);
 
-        // content_id
-        if (isset($query_params["content_id"])) {
-            if (!is_numeric($query_params["content_id"])){
-                throw new ClientError("content_id. Expected a number.", 422);
-            }
-            $sql_query.= " JOIN content_has_author ON author.id = content_has_author.author";               
-            array_push($sql_filter, " content_has_author.content = :content_id");
-            $sql_params["content_id"] = $query_params["content_id"];
-        }
-
-        // author_id
-        if (isset($query_params["author_id"])) {
-            if (!is_numeric($query_params["author_id"])) {
-                throw new ClientError("author_id. Expected a number.", 422);
-            }
-            array_push($sql_filter, " author.id = :author_id");
-            $sql_params["author_id"] = $query_params["author_id"];
-        }
-
-        // search
-        if (isset($query_params["search"])) {
-            array_push($sql_filter, " author.name LIKE :search");
-            $sql_params["search"] = "%". $query_params["search"]. "%";
-        }
-
-        // handle filters
-        if (count($sql_filter) > 0) {
-            $msg_to_append = " WHERE ";
-            foreach ($sql_filter as $filter) {
-                $msg_to_append .= $filter . " AND";
-            }
-            
-            // Append the filter without the trailing AND.
-            $sql_query .= substr($msg_to_append, 0, -3);            
-        }
-
-        //page
-        if (isset($query_params["page"])) {
-            $offset = ($query_params["page"] - 1) * 10;
-            $sql_query .= " LIMIT 10 OFFSET :offset";
-            $sql_params["offset"] = $offset;
-        }
+        $sql_query .= $query_to_append;
         
         $data = $db->execute_SQL($sql_query, $sql_params);
         
@@ -116,21 +77,5 @@ class Authors extends Endpoint
     {
         $this->set_status_code(204);
         $this->set_headers("Access-Control-Allow-Methods", "GET, OPTIONS");
-    }
-
-    /**
-     * 
-     * @param Array $valid_param An associative array of correct keys to check against.
-     */
-    protected function validate_params(array $params, $valid_params): bool 
-    {   
-        foreach ($params as $param_name=>$param_value)
-            // Check if the parameter is expected
-            if (!in_array($param_name, $valid_params)) {
-                throw new ClientError("'$param_name' is an Unknown Parameter.", 422);
-                return false;
-            }
-
-        return true;
-    }
+    }    
 }

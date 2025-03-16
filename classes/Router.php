@@ -56,7 +56,7 @@ class Router
             $endpoint = match ($target_endpoint) {
                 "authors" => new Authors($request, $this->database, $this->api_key),
                 "developer" => new Developer($request, $this->api_key),
-                "films" => new Films($request, $this->database, $this->api_key),
+                "content" => new Content($request, $this->database, $this->api_key),
                 default => throw new ClientError($target_endpoint, 404)
             };
 

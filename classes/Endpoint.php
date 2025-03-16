@@ -283,13 +283,15 @@ abstract class Endpoint
      * mapped to their corresponding SQL filter.
      * @param array $required_joins [optional] An associative array mapping
      * parameters to their SQL JOIN conditions.
+     * @param string $required_groupings [optional] A string containing a SQL
+     * grouping condition to remove duplicates.
      * 
      * @return array An array containing both:
      * - string `$sql_query` The SQL query with added conditions.
      * - array<string, mixed> `$sql_params` An associative array containing the
      * parameters to be binded to the SQL query.
      */
-    protected function set_universal_params(array $query_params, array $valid_params, array $required_joins=[]): array
+    protected function set_universal_params(array $query_params, array $valid_params, array $required_joins=[], string $required_grouping=""): array
     {
         /** @var string The SQL query with the parameters added. */
         $sql_query = "";
@@ -351,6 +353,11 @@ abstract class Endpoint
             
             // Append the filter without the trailing "AND".
             $sql_query .= substr($msg_to_append, 0, -3);            
+        }
+
+        // Add any grouping to remove duplicates.
+        if ($required_grouping != "") {
+            $sql_query .= $required_grouping;
         }
 
         // Handle the page parameter.

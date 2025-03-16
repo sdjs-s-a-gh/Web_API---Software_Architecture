@@ -228,4 +228,13 @@ abstract class Endpoint
     {
         throw new ClientError("OPTIONS", 405);
     }
+
+    /**
+     * 
+     * @uses ApiKey::validate_api_key() Used to authorise access to this method.
+     */
+    protected function require_key(): void
+    {
+        $this->api_key->validate_api_key($this->request->get_all_headers());
+    }
 }

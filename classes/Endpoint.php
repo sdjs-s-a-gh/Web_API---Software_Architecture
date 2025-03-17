@@ -256,7 +256,7 @@ abstract class Endpoint
      * 
      * @return bool Returns true if all query parameters are valid.
      */
-    protected function validate_params(array $query_params, $valid_params): bool 
+    protected function validate_query_params(array $query_params, $valid_params): bool 
     {   
         foreach ($query_params as $param_name=>$param_value) {
             if (!array_key_exists($param_name, $valid_params)) {
@@ -311,7 +311,7 @@ abstract class Endpoint
         }
 
         // Check for any unexpected parameters.
-        $this->validate_params($query_params, $valid_params);
+        $this->validate_query_params($query_params, $valid_params);
 
         // Add any joins that are needed.
         foreach ($required_joins as $param_name=>$join_condition) {
@@ -368,5 +368,32 @@ abstract class Endpoint
         }
         
         return [$sql_query, $sql_params];
+    }
+
+    protected function validate_body_params(array $request_body, array $required_params): array
+    {        
+        if ($request_body === null) {
+            throw new ClientError("No data provided", 400);
+        }
+        
+        $sql_params = [];
+
+        // Check all parameters have been provided in the request body. If not, a ClientError exception will be thrown.
+        foreach ($required_params as $required_param) {
+            if (!array_key_exists($required_param, $request_body)) {
+                throw new ClientError("$required_param is required", 400);
+            } else {
+                $sql_params[$required_param] = $request_body[$required_param]; 
+            }
+        }
+
+        // Check if any unexpected parameters have been passed in the response body.
+        foreach ($request_body as $param_name=>$param_value) {
+            if (!in_array($param_name, $required_params)) {
+                throw new ClientError("Unexpected Parameter: $param_name", 400); 
+            }
+        }
+        
+        return $sql_params;
     }
 }

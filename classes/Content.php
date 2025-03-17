@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Authors endpoint.
+ * Content endpoint.
  * 
  * This class represents the Content endpoint, supporting access to two HTTP
  * methods: GET and OPTIONS.
@@ -48,7 +48,7 @@ class Content extends Endpoint
     protected function get(): void
     {   
         $db = $this->database;        
-        $sql_query = "SELECT content.id, content.title, content.abstract, content.doi_link, content.preview_video, type.name as content_type, award.name as award_name
+        $sql_query = "SELECT content.id, content.title, content.abstract, content.doi_link, content.preview_video, type.name as type, award.name as award
         FROM content
         JOIN type ON content.type = type.id
         LEFT JOIN content_has_award ON content.id = content_has_award.content

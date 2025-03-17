@@ -71,7 +71,7 @@ class ClientError extends Exception
                 $this->message = "Method not allowed";
                 break;
             case 422:
-                $this->message = "Invalid Parameter in URL";
+                $this->message = "Invalid Parameter";
                 break;
             default:
             // If no status code is provided.

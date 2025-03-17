@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Authors endpoint.
+ * Author endpoint.
  * 
- * This class represents the Authors endpoint, supporting access to two HTTP
+ * This class represents the Author endpoint, supporting access to two HTTP
  * methods: GET and OPTIONS.
  * 
  * @author Scott Berston
  */
-class Authors extends Endpoint
+class Author extends Endpoint
 {
     private Database $database;
 
@@ -72,7 +72,7 @@ class Authors extends Endpoint
         $this->set_data($data);        
     }
 
-    /** Sets the allowed HTTP methods for this (the Authors) endpoint. */
+    /** Sets the allowed HTTP methods for this (the Author) endpoint. */
     protected function options(): void
     {
         $this->set_status_code(204);

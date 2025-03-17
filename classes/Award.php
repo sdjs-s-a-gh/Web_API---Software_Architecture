@@ -104,6 +104,7 @@ class Award extends Endpoint
     protected function patch(): void
     {
         $this->require_key();
+
         $db = $this->database;
         $sql_update_query = "UPDATE award SET name = :name WHERE id = :award_id";
 
@@ -113,10 +114,48 @@ class Award extends Endpoint
             throw new ClientError("No data provided", 400);
         }
         
+        $sql_params = $this->validate_body_params($request_body, array("award_id", "name"));        
+        
+        // Check if the name is unique        
+        if ($this->is_unique_award_name($request_body["name"]) === false) {
+            throw new ClientError($request_body["name"] . " is not a unique name.", 400);
+        } else {
+            $db->execute_SQL($sql_update_query, $sql_params);        
+            $this->set_status_code(200);
+        }       
+    }
+
+    protected function delete(): void
+    {
+        $this->require_key();
+
+        $db = $this->database;
+        $sql_delete_query = "DELETE FROM award WHERE id = :award_id";
+
+        $request_body = $this->request->get_body_parameters();
+
+        if ($request_body === null) {
+            throw new ClientError("No data provided", 400);
+        }
+        
+        $sql_param = $this->validate_body_params($request_body, array("award_id"));
+
+        // Check if the award_id exists
+        $sql_query = "SELECT id FROM award WHERE id = :award_id ";
+
+        if (count($db->execute_SQL($sql_query, $sql_param)) === 0) {
+            throw new ClientError("award_id " . $request_body["award_id"] . " does not exist.", 400);
+        } else {
+            $db->execute_SQL($sql_delete_query, $sql_param);        
+            $this->set_status_code(202);
+        }        
+    }
+
+    private function validate_body_params(array $request_body, array $required_params): array
+    {
         $sql_params = [];
 
         // Check all parameters have been provided in the request body. If not, a ClientError exception will be thrown.
-        $required_params = ["award_id", "name"];
         foreach ($required_params as $required_param) {
             if (!array_key_exists($required_param, $request_body)) {
                 throw new ClientError("$required_param is required", 400);
@@ -134,47 +173,7 @@ class Award extends Endpoint
             }
         }
         
-        // Check if the name is unique        
-        if ($this->is_unique_award_name($request_body["name"]) === false) {
-            throw new ClientError($request_body["name"] . " is not a unique name.", 400);
-        } else {
-            $db->execute_SQL($sql_update_query, $sql_params);        
-            $this->set_status_code(200);
-        }       
-    }
-
-    protected function delete(): void
-    {
-        $this->require_key();
-        $db = $this->database;
-        $sql_delete_query = "DELETE FROM award WHERE id = :award_id";
-
-        $request_body = $this->request->get_body_parameters();
-
-        if ($request_body === null) {
-            throw new ClientError("No data provided", 400);
-        }
-        
-        $sql_params = [];
-
-        // Check the "award_id" parameter is provided.
-        if (isset($request_body["award_id"]) and !is_numeric($request_body["award_id"])) {
-            throw new ClientError("award_id. Expected a number.", 422);            
-        } elseif (isset($request_body["award_id"])) {
-            $sql_params["award_id"] = $request_body["award_id"];            
-        } else {
-            throw new ClientError("Parameter 'award_id' is required.", 400);
-        }
-
-        // Check if any unexpected parameters have been passed in the response body.
-        foreach ($request_body as $param_name=>$param_value) {
-            if (!in_array($param_name, array("award_id"))) {
-                throw new ClientError("Unexpected Parameter: $param_name", 400); 
-            }
-        }
-
-        $db->execute_SQL($sql_delete_query, $sql_params);        
-        $this->set_status_code(202);
+        return $sql_params;
     }
 
     /** Sets the allowed HTTP methods for this (the Content) endpoint. */

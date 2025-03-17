@@ -54,10 +54,11 @@ class Router
         
         try {
             $endpoint = match ($target_endpoint) {
-                "authors" => new Authors($request, $this->database, $this->api_key),
+                "authors" => new Author($request, $this->database, $this->api_key),
                 "developer" => new Developer($request, $this->api_key),
                 "content" => new Content($request, $this->database, $this->api_key),
                 "award" => new Award($request, $this->database, $this->api_key),
+                "award-management" => new AwardManagement($request, $this->database, $this->api_key),
                 default => throw new ClientError($target_endpoint, 404)
             };
 

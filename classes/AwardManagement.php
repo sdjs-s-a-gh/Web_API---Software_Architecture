@@ -39,14 +39,14 @@ class AwardManagement extends Endpoint
         $query_param["content_id"] = $request_body["content_id"];
 
         if (count($db->execute_SQL($sql_query, $query_param)) === 0) {
-            throw new ClientError("There is no piece of content with the id ". $request_body["content_id"], 400);
+            throw new ClientError("content_id ". $request_body["content_id"] . " does not exist.", 404);
         }
 
         // Check if the content already has an award
         $sql_query = "SELECT content FROM content_has_award WHERE content = :content_id";
 
         if (count($db->execute_SQL($sql_query, $query_param)) > 0) {
-            throw new ClientError("content_id ". $request_body["content_id"] . " currently already has an award.", 400);
+            throw new ClientError("content_id ". $request_body["content_id"] . " currently already has an award.", 409);
         }
 
         $query_param = [];
@@ -56,7 +56,7 @@ class AwardManagement extends Endpoint
         $query_param["award_id"] = $request_body["award_id"];
 
         if (count($db->execute_SQL($sql_query, $query_param)) === 0) {
-            throw new ClientError("award_id ". $request_body["award_id"] . " does not exist.", 400);
+            throw new ClientError("award_id ". $request_body["award_id"] . " does not exist.", 404);
         }
 
         $db->execute_SQL($sql_insert_query, $sql_params);        
@@ -79,10 +79,10 @@ class AwardManagement extends Endpoint
         $sql_query = "SELECT content FROM content_has_award WHERE content = :content_id";
 
         if (count($db->execute_SQL($sql_query, $sql_param)) === 0) {
-            throw new ClientError("content_id " . $request_body["content_id"] . " has no award to remove.", 400);
+            throw new ClientError("content_id " . $request_body["content_id"] . " has no award to remove.", 404);
         } else {
             $db->execute_SQL($sql_delete_query, $sql_param);        
-            $this->set_status_code(202);
+            $this->set_status_code(204);
         }        
     }
 

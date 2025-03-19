@@ -33,13 +33,14 @@ class Content extends Endpoint
      * the URL. These are identical to those in the Authors endpoint.
      * 
      * Supported Parameters:
-     * - `author_id`: Filters the list of content where the author_id is
-     * present.
-     * - `content_id`: Returns the content corresponding to the content_id.
-     * - `search`: Performs a search in the content_title and content_abstract
-     * attribute fields.
-     * - `page`: Implements pagination, offsetting the returned content by a
-     * given number.
+     * - `author_id`: Filters the list of content to only those where the
+     * author_id is present.
+     * - `content_id`: Returns the piece of content corresponding to the
+     * content_id.
+     * - `search`: Filters pieces of content to only those where their title
+     * and abstract feature this search condition.
+     * - `page`: Implements pagination, offsetting the returned pieces of
+     * contentcontent by a given number.
      * 
      * @throws PDOException If there is a database query error.
      * @throws ClientError If no parameters are provided or if they are
@@ -47,6 +48,7 @@ class Content extends Endpoint
      */
     protected function get(): void
     {   
+        $this->require_key();
         $db = $this->database;        
         $sql_query = "SELECT content.id, content.title, content.abstract, content.doi_link, content.preview_video, type.name as type, award.name as award
         FROM content

@@ -25,7 +25,7 @@ class Author extends Endpoint
     }
 
     /**
-     * Queries the database for authors based on many parameters passed in the 
+     * Queries the database for authors based on parameters passed in the 
      * URL.
      * 
      * This method handles GET requests and allows users to filter the list of
@@ -34,9 +34,10 @@ class Author extends Endpoint
      * 
      * Supported Parameters:
      * - `author_id`: Returns an author with the corresponding author_id.
-     * - `content_id`: Filter authors to only those who are in a particular
-     * content.
-     * - `search`: Performs a search in the authors name.
+     * - `content_id`: Filters authors to only those who are in a particular
+     * piece of content.
+     * - `search`: Filters authors to only those with their names featuring 
+     * this search condition.
      * - `page`: Implements pagination, offsetting the returned authors by a
      * given number.
      * 
@@ -46,6 +47,7 @@ class Author extends Endpoint
      */
     protected function get(): void
     {   
+        $this->require_key();
         $db = $this->database;        
         $sql_query = "SELECT author.id, author.name FROM author";
 

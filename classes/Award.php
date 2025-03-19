@@ -68,7 +68,7 @@ class Award extends Endpoint
         
         // Check if the name is unique        
         if ($this->is_unique_award_name($request_body["name"]) === false) {
-            throw new ClientError( $request_body["name"] . " is not a unique name.", 400);
+            throw new ClientError( $request_body["name"] . " is not a unique name.", 409);
         } else {
             $db->execute_SQL($sql_insert_query, $sql_params);        
             $this->set_status_code(201);
@@ -88,7 +88,7 @@ class Award extends Endpoint
         
         // Check if the name is unique        
         if ($this->is_unique_award_name($request_body["name"]) === false) {
-            throw new ClientError($request_body["name"] . " is not a unique name.", 400);
+            throw new ClientError($request_body["name"] . " is not a unique name.", 409);
         }
 
         // Check if the award_id exists
@@ -96,7 +96,7 @@ class Award extends Endpoint
         $query_param["award_id"] = $request_body["award_id"];
         
         if (count($db->execute_SQL($sql_query, $query_param)) === 0) {
-            throw new ClientError("award_id " . $request_body["award_id"] . " does not exist.", 400);
+            throw new ClientError("award_id " . $request_body["award_id"] . " does not exist.", 404);
         } else {
             $db->execute_SQL($sql_update_query, $sql_params);        
             $this->set_status_code(200); 
@@ -118,10 +118,10 @@ class Award extends Endpoint
         $sql_query = "SELECT id FROM award WHERE id = :award_id ";
 
         if (count($db->execute_SQL($sql_query, $sql_param)) === 0) {
-            throw new ClientError("award_id " . $request_body["award_id"] . " does not exist.", 400);
+            throw new ClientError("award_id " . $request_body["award_id"] . " does not exist.", 404);
         } else {
             $db->execute_SQL($sql_delete_query, $sql_param);        
-            $this->set_status_code(202);
+            $this->set_status_code(204);
         }        
     }
 

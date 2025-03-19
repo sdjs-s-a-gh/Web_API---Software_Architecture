@@ -54,7 +54,7 @@ class Router
         
         try {
             $endpoint = match ($target_endpoint) {
-                "authors" => new Author($request, $this->database, $this->api_key),
+                "author" => new Author($request, $this->database, $this->api_key),
                 "developer" => new Developer($request, $this->api_key),
                 "content" => new Content($request, $this->database, $this->api_key),
                 "award" => new Award($request, $this->database, $this->api_key),

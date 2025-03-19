@@ -70,6 +70,9 @@ class ClientError extends Exception
             case 405:
                 $this->message = "Method not allowed";
                 break;
+            case 409:
+                $this->message = "Conflict";
+                break;
             case 422:
                 $this->message = "Invalid Parameter";
                 break;

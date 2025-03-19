@@ -305,11 +305,6 @@ abstract class Endpoint
         /** @var array<int, string> Each individual filter to add to the query. */
         $sql_filter = [];
 
-        // Check if there are parameters.
-        if (count($query_params) === 0) {
-            throw new ClientError("No parameters provided.", 400);
-        }
-
         // Check for any unexpected parameters.
         $this->validate_query_params($query_params, $valid_params);
 

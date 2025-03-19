@@ -365,6 +365,19 @@ abstract class Endpoint
         return [$sql_query, $sql_params];
     }
 
+    protected function attribute_exists(Database $db, string $table, string $attribute, mixed $value): bool
+    {
+        $sql_query = "SELECT $attribute FROM $table WHERE $attribute = :$attribute";
+        $result = $db->execute_SQL($sql_query, ["$attribute" => $value]);
+        
+        if (empty($result)) {
+            return false;
+        } else {
+            return true;
+        }
+
+    }
+
     protected function validate_body_params(array $request_body, array $required_params): array
     {        
         if ($request_body === null) {

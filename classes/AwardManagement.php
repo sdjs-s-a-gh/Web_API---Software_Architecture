@@ -78,6 +78,7 @@ class AwardManagement extends Endpoint
         // Check if the content has an award to remove
         $sql_query = "SELECT content FROM content_has_award WHERE content = :content_id";
 
+        
         if (count($db->execute_SQL($sql_query, $sql_param)) === 0) {
             throw new ClientError("content_id " . $request_body["content_id"] . " has no award to remove.", 404);
         } else {

@@ -3,8 +3,11 @@
 /**
  * Content endpoint.
  * 
- * This class represents the Content endpoint, supporting access to two HTTP
- * methods: GET and OPTIONS.
+ * This class represents the Content endpoint, handling requests for retrieving
+ * information about each piece of content presented at the conference. The
+ * class supports access to two HTTP methods, including GET and OPTIONS.
+ * 
+ * GET requests require API key authentication.
  * 
  * @author Scott Berston
  */
@@ -25,12 +28,13 @@ class Content extends Endpoint
     }
 
     /**
-     * Queries the database for content (types of papers) based on many
-     * parameters passed in the URL.
+     * Queries the database for pieces of content based on parameters passed in
+     * the URL.
      * 
      * This method handles GET requests and allows users to filter the list of
      * content by passing in a potential of four different query parameters in
-     * the URL. These are identical to those in the Authors endpoint.
+     * the URL. These parameters are identical to those in the Authors endpoint.
+     * Requires API key authentication.
      * 
      * Supported Parameters:
      * - `author_id`: Filters the list of content to only those where the
@@ -40,15 +44,16 @@ class Content extends Endpoint
      * - `search`: Filters pieces of content to only those where their title
      * and abstract feature this search condition.
      * - `page`: Implements pagination, offsetting the returned pieces of
-     * contentcontent by a given number.
+     * content by a given number.
      * 
-     * @throws PDOException If there is a database query error.
+     * @throws PDOException If there is a database error.
      * @throws ClientError If no parameters are provided or if they are
      * invalid.
      */
     protected function get(): void
     {   
         $this->require_key();
+
         $db = $this->database;        
         $sql_query = "SELECT content.id, content.title, content.abstract, content.doi_link, content.preview_video, type.name as type, award.name as award
         FROM content
@@ -77,7 +82,7 @@ class Content extends Endpoint
         $this->set_data($data);        
     }
 
-    /** Sets the allowed HTTP methods for this (the Content) endpoint. */
+    /** Specifies the allowed HTTP methods for this endpoint. */
     protected function options(): void
     {
         $this->set_status_code(204);

@@ -39,7 +39,7 @@ class Router
      * to its corresponding endpoint class. Should the endpoint class not
      * exist, a 404 "Not Found" ClientError exception is thrown.
      * 
-     * @param $request An instance of the incoming HTTP request. 
+     * @param Request $request An instance of the incoming HTTP request. 
      * 
      * @throws ClientError 
      * - If the endpoint does not exist, a 404 "Not Found"

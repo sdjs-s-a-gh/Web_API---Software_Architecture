@@ -3,8 +3,8 @@
 /** 
  * Client Error Exception.
  * 
- * This class is used to handle any client errors. Notably, these errors have
- * the 4XX status codes.
+ * This class is used to handle any client errors denoted by the 4XX status
+ * codes.
  * 
  * @author Scott Berston
  */

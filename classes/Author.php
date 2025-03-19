@@ -3,8 +3,11 @@
 /**
  * Author endpoint.
  * 
- * This class represents the Author endpoint, supporting access to two HTTP
- * methods: GET and OPTIONS.
+ * This class represents the Author endpoint, handling requests for retrieving
+ * author information. The class supports access to two HTTP methods, including
+ * GET and OPTIONS.
+ * 
+ * GET requests require API key authentication.
  * 
  * @author Scott Berston
  */
@@ -30,7 +33,7 @@ class Author extends Endpoint
      * 
      * This method handles GET requests and allows users to filter the list of
      * authors (their name and id) by passing in a potential of four different
-     * query parameters in the URL.
+     * query parameters in the URL. Requires API key authentication.
      * 
      * Supported Parameters:
      * - `author_id`: Returns an author with the corresponding author_id.
@@ -41,13 +44,14 @@ class Author extends Endpoint
      * - `page`: Implements pagination, offsetting the returned authors by a
      * given number.
      * 
-     * @throws PDOException If there is a database query error.
+     * @throws PDOException If there is a database error.
      * @throws ClientError If no parameters are provided or if they are
      * invalid.
      */
     protected function get(): void
     {   
         $this->require_key();
+
         $db = $this->database;        
         $sql_query = "SELECT author.id, author.name FROM author";
 
@@ -74,7 +78,7 @@ class Author extends Endpoint
         $this->set_data($data);        
     }
 
-    /** Sets the allowed HTTP methods for this (the Author) endpoint. */
+    /** Specifies the allowed HTTP methods for this endpoint. */
     protected function options(): void
     {
         $this->set_status_code(204);

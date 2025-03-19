@@ -4,10 +4,11 @@
  * Endpoint abstract Class. 
  * 
  * This class provides a template for all endpoints to inherit, providing them 
- * with essential functionality. It has a constructor that calls the appropriate
- * method to execute based on the HTTP method used in an incoming request. Each
- * subclass should override the appropriate HTTP method(s) to define specific
- * behaviour for that Endpoint.
+ * with essential functionality like response headers, status codes and request
+ * validation. It has a constructor that calls the appropriate method to
+ * execute based on the HTTP method used in an incoming request. Each subclass
+ * should override the appropriate HTTP method(s) to define specific behaviour
+ * for that Endpoint.
  * 
  * @author Scott Berston
  */
@@ -49,10 +50,9 @@ abstract class Endpoint
      * This constructor handles routing the HTTP method from the incoming
      * request to the corresponding Endpoint class method.
      * 
-     * @param Request $request An instance of the Request class that represents
-     * an incoming HTTP request.
-     * @param ApiKey $api_key An instance of the ApiKey class that contains
-     * a function to verify the API key for required methods.
+     * @param Request $request An instance of the incoming HTTP request.
+     * @param ApiKey $api_key An instance of the ApiKey verifier to be used
+     * for authentication.
      * 
      * @throws ClientError If the client uses an invalid HTTP method. This should
      * not be possible as each HTTP method is covered in this constructor.
@@ -88,7 +88,7 @@ abstract class Endpoint
     }
 
     /**
-     * Sets the HTTP status code to be used in the response.
+     * Sets the response HTTP status code.
      * 
      * @param int $status_code The HTTP status code for the response.
      */
@@ -98,7 +98,7 @@ abstract class Endpoint
     }
 
     /** 
-     * Adds a Message Body or CORS related response header.
+     * Adds a response header.
      * 
      * This method adds a new HTTP header to the response, including both
      * message body headers (such as "Content-Type") and CORS headers
@@ -230,7 +230,7 @@ abstract class Endpoint
     }
 
     /**
-     * Validate and verify whether the API key provided by the client matches
+     * Validates and verifies whether the API key provided by the client matches
      * the one in the env.php file.
      * 
      * @uses ApiKey::validate_api_key() Used to authorise access to this method.
@@ -248,15 +248,17 @@ abstract class Endpoint
     /**
      * Validates that all query parameters provided are expected.
      * 
-     * @param Array $query_params The query parameters from the HTTP request.
+     * @param Array $query_params An associative array of parameters sent in
+     * the HTTP request.
      * @param Array $valid_param An associative array of allowed parameter
      * names as keys.
      * 
      * @throws ClientError If an unexpected parameter is present.
      * 
-     * @return bool Returns true if all query parameters are valid.
+     * @return bool Returns true if all query parameters are valid, otherwise
+     * an exception is thrown.
      */
-    protected function validate_query_params(array $query_params, $valid_params): bool 
+    protected function validate_query_params(array $query_params, array $valid_params): bool 
     {   
         foreach ($query_params as $param_name=>$param_value) {
             if (!array_key_exists($param_name, $valid_params)) {
@@ -269,13 +271,13 @@ abstract class Endpoint
     }
 
     /**
-     * Creates and returns an SQL query with dynamic filtering.
+     * Constructs and returns an SQL query with dynamic filtering and JOIN
+     * conditions.
      * 
-     * This method processes query parameters provided in the request to
-     * construct SQL filters, adding necessary JOIN statements as well as
-     * conditions for filtering and pagination. It is designed for the Authors
-     * and Content endpoints as they share common parameters (`content_id`,
-     * `author_id`, `search` and `page`)
+     * This method processes query parameters provided in the request, adding
+     * necessary JOIN conditions as well as filtering and pagination. The method
+     * is designed for the Authors and Content endpoints as they share common
+     * parameters (`content_id`, `author_id`, `search` and `page`).
      * 
      * @param array $query_params An associative array of parameters sent in
      * the HTTP request.
@@ -365,19 +367,22 @@ abstract class Endpoint
         return [$sql_query, $sql_params];
     }
 
-    protected function attribute_exists(Database $db, string $table, string $attribute, mixed $value): bool
-    {
-        $sql_query = "SELECT $attribute FROM $table WHERE $attribute = :$attribute";
-        $result = $db->execute_SQL($sql_query, ["$attribute" => $value]);
-        
-        if (empty($result)) {
-            return false;
-        } else {
-            return true;
-        }
-
-    }
-
+    /**
+     * Validates the request body parameters.
+     * 
+     * This method checks for missing and unexpected parameters, ensuring the
+     * request body is valid.
+     * 
+     * @param array $request_body An associative array of the request body
+     * parameters.
+     * @param array $required_params An array of required parameter names.
+     * 
+     * @throws ClientError If required parameters are missing or if any
+     * unexpected parameter(s) are present.
+     * 
+     * @return array An associative array of validated parameters, wherein each
+     * of whom map to their value.
+     */
     protected function validate_body_params(array $request_body, array $required_params): array
     {        
         if ($request_body === null) {

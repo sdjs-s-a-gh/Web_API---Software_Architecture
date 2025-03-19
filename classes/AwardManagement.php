@@ -3,8 +3,9 @@
 /**
  * AwardManagement endpoint.
  * 
- * This class represents the AwardManagement endpoint, supporting access to three HTTP
- * methods: POST, DELETE and OPTIONS.
+ * This class represents the AwardManagement endpoint, handling the giving
+ * (creating) and removal (deleting) of awards for pieces of content. The class
+ * support access to three methods, including POST, DELETE and OPTIONS.
  * 
  * @author Scott Berston
  */
@@ -24,6 +25,17 @@ class AwardManagement extends Endpoint
         parent::__construct($request, $api_key);
     }
 
+    /**
+     * Gives an award to a piece of content.
+     * 
+     * This method handles POST requests and creates a new record of an
+     * content-award relationship. API authentication is required.
+     * 
+     * @throws ClientError If:
+     * - The content_id does not exist.
+     * - The award_id does not exist.
+     * - The content already has an award assigned.
+     */
     protected function post(): void
     {
         $this->require_key();
@@ -35,35 +47,30 @@ class AwardManagement extends Endpoint
         $sql_params = $this->validate_body_params($request_body, array("content_id", "award_id"));
 
         // Check if the content exists
-        $sql_query = "SELECT id FROM content WHERE id = :content_id";
-        $query_param["content_id"] = $request_body["content_id"];
-
-        if (count($db->execute_SQL($sql_query, $query_param)) === 0) {
-            throw new ClientError("content_id ". $request_body["content_id"] . " does not exist.", 404);
-        }
-
-        // Check if the content already has an award
-        $sql_query = "SELECT content FROM content_has_award WHERE content = :content_id";
-
-        if (count($db->execute_SQL($sql_query, $query_param)) > 0) {
-            throw new ClientError("content_id ". $request_body["content_id"] . " currently already has an award.", 409);
-        }
-
-        $query_param = [];
+        $this->content_exists($request_body["content_id"]);
 
         // Check if the award exists
-        $sql_query = "SELECT id FROM award WHERE id = :award_id";
-        $query_param["award_id"] = $request_body["award_id"];
+        $this->award_exists($request_body["award_id"]);
 
-        if (count($db->execute_SQL($sql_query, $query_param)) === 0) {
-            throw new ClientError("award_id ". $request_body["award_id"] . " does not exist.", 404);
-        }
+        // Check if the content already has an award
+        if ($this->content_has_award($request_body["content_id"])) {
+            throw new ClientError("content_id '". $request_body["content_id"] . "' currently already has an award.", 409);
+        }      
 
         $db->execute_SQL($sql_insert_query, $sql_params);        
         $this->set_status_code(201);
              
     }
 
+    /**
+     * Removes an award from a piece of content.
+     * 
+     * This method handles DELETE requests and removes an existing
+     * content-award relationship. API key authentication is required.
+     * 
+     * @throws ClientError If the content_id does not exist or the content has
+     * no award to remove.
+     */
     protected function delete(): void
     {
         $this->require_key();
@@ -75,18 +82,26 @@ class AwardManagement extends Endpoint
 
         $sql_param = $this->validate_body_params($request_body, array("content_id"));
 
-        // Check if the content has an award to remove
-        $sql_query = "SELECT content FROM content_has_award WHERE content = :content_id";
+        // Check if the content exists
+        $this->content_exists($request_body["content_id"]);
 
-        
-        if (count($db->execute_SQL($sql_query, $sql_param)) === 0) {
-            throw new ClientError("content_id " . $request_body["content_id"] . " has no award to remove.", 404);
-        } else {
-            $db->execute_SQL($sql_delete_query, $sql_param);        
-            $this->set_status_code(204);
-        }        
+        // Check if the content has an award to remove
+        if ($this->content_has_award($request_body["content_id"]) === false) {            
+            throw new ClientError("content_id '".$request_body["content_id"]."' has no award to remove.", 404);
+        }
+   
+        $db->execute_SQL($sql_delete_query, $sql_param);        
+        $this->set_status_code(204);               
     }
 
+    /**
+     * @inheritdoc Additionally ensures that all parameters are numeric.
+     * 
+     * @throws ClientError If:
+     * - Required parameters are missing.
+     * - Any unexpected parameter(s) are present.
+     * - Any parameter is not numeric.
+     */
     protected function validate_body_params(array $request_body, array $required_params): array
     {        
         $sql_params = parent::validate_body_params($request_body, $required_params);
@@ -102,7 +117,69 @@ class AwardManagement extends Endpoint
         return $sql_params;
     }
 
-    /** Sets the allowed HTTP methods for this (the Content) endpoint. */
+    /**
+     * Verifies if a piece of content exists in the database.
+     * 
+     * @param int $content_id The content_id to check.
+     *  
+     * @throws ClientError If the content_id does not exist.
+     * 
+     * @return bool Returns true if the content exists, otherwise an exception
+     * is thrown.
+     */
+    private function content_exists($content_id): bool
+    {
+        $sql_query = "SELECT id FROM content WHERE id = :content_id";
+
+        if (count($this->database->execute_SQL($sql_query, ["content_id" => $content_id])) === 0) {
+            throw new ClientError("content_id '$content_id' does not exist.", 404);
+            return false;
+        } else {            
+            return true;
+        }
+    }
+
+    /** 
+     * Verifies if a piece of content already has an award assigned.
+     * 
+     * @param int $content_id The content_id to check.
+     * 
+     * @return bool Returns true if the content has an award.
+     */
+    private function content_has_award($content_id): bool
+    {
+        $sql_query = "SELECT content FROM content_has_award WHERE content = :content_id";
+
+        if (count($this->database->execute_SQL($sql_query, ["content_id" => $content_id])) === 0) {
+            return false;
+        } else {            
+            return true;
+        }
+    }
+
+    /**
+     * Verifies if an award exists in the database.
+     * 
+     * @param int $award_id The award_id to check.
+     * 
+     * @throws ClientError If the award_id does not exist.
+     * 
+     * @return bool Returns true if the award exists, otherwise an exception
+     * is thrown.
+     */
+    private function award_exists($award_id): bool
+    {
+        $sql_query = "SELECT id FROM award WHERE id = :award_id";
+
+        if (count($this->database->execute_SQL($sql_query, ["award_id" => $award_id])) === 0) {
+            throw new ClientError("award_id '$award_id' does not exist.", 404);
+            return false;
+        } else {            
+            return true;
+        }
+    }
+
+    /** Specifies the allowed HTTP methods for this endpoint. */
     protected function options(): void
     {
         $this->set_status_code(204);

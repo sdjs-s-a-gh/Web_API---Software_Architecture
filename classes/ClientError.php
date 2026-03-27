@@ -3,8 +3,8 @@
 /** 
  * Client Error Exception.
  * 
- * This class is used to handle any client errors. Notably, these errors have
- * the 4XX status codes.
+ * This class is used to handle any client errors denoted by the 4XX status
+ * codes.
  * 
  * @author Scott Berston
  */
@@ -70,8 +70,11 @@ class ClientError extends Exception
             case 405:
                 $this->message = "Method not allowed";
                 break;
+            case 409:
+                $this->message = "Conflict";
+                break;
             case 422:
-                $this->message = "Invalid Parameter in URL";
+                $this->message = "Invalid Parameter";
                 break;
             default:
             // If no status code is provided.

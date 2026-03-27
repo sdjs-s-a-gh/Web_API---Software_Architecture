@@ -4,10 +4,11 @@
  * Endpoint abstract Class. 
  * 
  * This class provides a template for all endpoints to inherit, providing them 
- * with essential functionality. It has a constructor that calls the appropriate
- * method to execute based on the HTTP method used in an incoming request. Each
- * subclass should override the appropriate HTTP method(s) to define specific
- * behaviour for that Endpoint.
+ * with essential functionality like response headers, status codes and request
+ * validation. It has a constructor that calls the appropriate method to
+ * execute based on the HTTP method used in an incoming request. Each subclass
+ * should override the appropriate HTTP method(s) to define specific behaviour
+ * for that Endpoint.
  * 
  * @author Scott Berston
  */
@@ -49,10 +50,9 @@ abstract class Endpoint
      * This constructor handles routing the HTTP method from the incoming
      * request to the corresponding Endpoint class method.
      * 
-     * @param Request $request An instance of the Request class that represents
-     * an incoming HTTP request.
-     * @param ApiKey $api_key An instance of the ApiKey class that contains
-     * a function to verify the API key for required methods.
+     * @param Request $request An instance of the incoming HTTP request.
+     * @param ApiKey $api_key An instance of the ApiKey verifier to be used
+     * for authentication.
      * 
      * @throws ClientError If the client uses an invalid HTTP method. This should
      * not be possible as each HTTP method is covered in this constructor.
@@ -88,7 +88,7 @@ abstract class Endpoint
     }
 
     /**
-     * Sets the HTTP status code to be used in the response.
+     * Sets the response HTTP status code.
      * 
      * @param int $status_code The HTTP status code for the response.
      */
@@ -98,7 +98,7 @@ abstract class Endpoint
     }
 
     /** 
-     * Adds a Message Body or CORS related response header.
+     * Adds a response header.
      * 
      * This method adds a new HTTP header to the response, including both
      * message body headers (such as "Content-Type") and CORS headers
@@ -227,5 +227,186 @@ abstract class Endpoint
     protected function options(): void
     {
         throw new ClientError("OPTIONS", 405);
+    }
+
+    /**
+     * Validates and verifies whether the API key provided by the client matches
+     * the one in the env.php file.
+     * 
+     * @uses ApiKey::validate_api_key() Used to authorise access to this method.
+
+     * @throws ClientError
+     * - If the Authorization Header is not found
+     * - The Header type is invalid
+     * - Or the Authorization key is invalid. 
+     */
+    protected function require_key(): void
+    {
+        $this->api_key->validate_api_key($this->request->get_all_headers());
+    }
+
+    /**
+     * Validates that all query parameters provided are expected.
+     * 
+     * @param Array $query_params An associative array of parameters sent in
+     * the HTTP request.
+     * @param Array $valid_param An associative array of allowed parameter
+     * names as keys.
+     * 
+     * @throws ClientError If an unexpected parameter is present.
+     * 
+     * @return bool Returns true if all query parameters are valid, otherwise
+     * an exception is thrown.
+     */
+    protected function validate_query_params(array $query_params, array $valid_params): bool 
+    {   
+        foreach ($query_params as $param_name=>$param_value) {
+            if (!array_key_exists($param_name, $valid_params)) {
+                throw new ClientError("'$param_name' is an Unknown Parameter.", 422);
+                return false;
+            }
+        }          
+
+        return true;
+    }
+
+    /**
+     * Constructs and returns an SQL query with dynamic filtering and JOIN
+     * conditions.
+     * 
+     * This method processes query parameters provided in the request, adding
+     * necessary JOIN conditions as well as filtering and pagination. The method
+     * is designed for the Authors and Content endpoints as they share common
+     * parameters (`content_id`, `author_id`, `search` and `page`).
+     * 
+     * @param array $query_params An associative array of parameters sent in
+     * the HTTP request.
+     * @param array $valid_params An associative array of valid parameters
+     * mapped to their corresponding SQL filter.
+     * @param array $required_joins [optional] An associative array mapping
+     * parameters to their SQL JOIN conditions.
+     * @param string $required_groupings [optional] A string containing a SQL
+     * grouping condition to remove duplicates.
+     * 
+     * @return array An array containing both:
+     * - string `$sql_query` The SQL query with added conditions.
+     * - array<string, mixed> `$sql_params` An associative array containing the
+     * parameters to be binded to the SQL query.
+     */
+    protected function set_universal_params(array $query_params, array $valid_params, array $required_joins=[], string $required_grouping=""): array
+    {
+        /** @var string The SQL query with the parameters added. */
+        $sql_query = "";
+
+        /**
+         * @var array<string, mixed> An associative array of the parameter to
+         * be binded to the SQL query 
+         */
+        $sql_params = [];
+
+        /** @var array<int, string> Each individual filter to add to the query. */
+        $sql_filter = [];
+
+        // Check for any unexpected parameters.
+        $this->validate_query_params($query_params, $valid_params);
+
+        // Add any joins that are needed.
+        foreach ($required_joins as $param_name=>$join_condition) {
+            if (isset($query_params[$param_name])) {
+                $sql_query .= $join_condition;
+            }
+        }
+
+        // Handle the content_id parameter.
+        if (isset($query_params["content_id"])) {
+            if (!is_numeric($query_params["content_id"])){
+                throw new ClientError("content_id. Expected a number.", 422);
+            }            
+            array_push($sql_filter, $valid_params["content_id"]);
+            $sql_params["content_id"] = $query_params["content_id"];
+        }
+
+        // Handle the author_id parameter.
+        if (isset($query_params["author_id"])) {
+            if (!is_numeric($query_params["author_id"])) {
+                throw new ClientError("author_id. Expected a number.", 422);
+            }
+            array_push($sql_filter, $valid_params["author_id"]);
+            $sql_params["author_id"] = $query_params["author_id"];
+        }
+
+        // Handle the search parameter.
+        if (isset($query_params["search"])) {
+            array_push($sql_filter, $valid_params["search"]);
+            $sql_params["search"] = "%". $query_params["search"]. "%";
+        }
+
+        // Create the SQL query with the added conditions.
+        if (count($sql_filter) > 0) {
+            $msg_to_append = " WHERE ";
+            foreach ($sql_filter as $filter) {
+                $msg_to_append .= $filter . " AND";
+            }
+            
+            // Append the filter without the trailing "AND".
+            $sql_query .= substr($msg_to_append, 0, -3);            
+        }
+
+        // Add any grouping to remove duplicates.
+        if ($required_grouping != "") {
+            $sql_query .= $required_grouping;
+        }
+
+        // Handle the page parameter.
+        if (isset($query_params["page"])) {
+            $offset = ($query_params["page"] - 1) * 10;
+            $sql_query .= " LIMIT 10 OFFSET :offset";
+            $sql_params["offset"] = $offset;
+        }
+        
+        return [$sql_query, $sql_params];
+    }
+
+    /**
+     * Validates the request body parameters.
+     * 
+     * This method checks for missing and unexpected parameters, ensuring the
+     * request body is valid.
+     * 
+     * @param array $request_body An associative array of the request body
+     * parameters.
+     * @param array $required_params An array of required parameter names.
+     * 
+     * @throws ClientError If required parameters are missing or if any
+     * unexpected parameter(s) are present.
+     * 
+     * @return array An associative array of validated parameters, wherein each
+     * of whom map to their value.
+     */
+    protected function validate_body_params(array $request_body, array $required_params): array
+    {        
+        if ($request_body === null) {
+            throw new ClientError("No data provided", 400);
+        }
+        
+        $sql_params = [];
+
+        // Check all parameters have been provided in the request body. If not, a ClientError exception will be thrown.
+        foreach ($required_params as $required_param) {
+            if (!array_key_exists($required_param, $request_body)) {
+                throw new ClientError("$required_param is required", 400);
+            } else {
+                $sql_params[$required_param] = $request_body[$required_param]; 
+            }
+        }
+
+        // Check if any unexpected parameters have been passed in the response body.
+        foreach ($request_body as $param_name=>$param_value) {
+            if (!in_array($param_name, $required_params)) {
+                throw new ClientError("Unexpected Parameter: $param_name", 400); 
+            }
+        }
+        
+        return $sql_params;
     }
 }

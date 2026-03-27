@@ -63,7 +63,7 @@ class ApiKey
         } elseif (array_key_exists("authorization", $request_headers)) {
             $authorization_header = $request_headers["Authorization"];
         } else {
-            throw new ClientError("Authorization Header is not found.", 400);
+            throw new ClientError("Authorization Header is not found.", 401);
             return false;
         }
 

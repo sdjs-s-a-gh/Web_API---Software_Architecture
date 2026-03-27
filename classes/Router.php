@@ -39,7 +39,7 @@ class Router
      * to its corresponding endpoint class. Should the endpoint class not
      * exist, a 404 "Not Found" ClientError exception is thrown.
      * 
-     * @param $request An instance of the incoming HTTP request. 
+     * @param Request $request An instance of the incoming HTTP request. 
      * 
      * @throws ClientError 
      * - If the endpoint does not exist, a 404 "Not Found"
@@ -54,9 +54,11 @@ class Router
         
         try {
             $endpoint = match ($target_endpoint) {
-                "authors" => new Authors($request, $this->database, $this->api_key),
+                "author" => new Author($request, $this->database, $this->api_key),
                 "developer" => new Developer($request, $this->api_key),
-                "films" => new Films($request, $this->database, $this->api_key),
+                "content" => new Content($request, $this->database, $this->api_key),
+                "award" => new Award($request, $this->database, $this->api_key),
+                "award-management" => new AwardManagement($request, $this->database, $this->api_key),
                 default => throw new ClientError($target_endpoint, 404)
             };
 

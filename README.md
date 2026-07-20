@@ -1,9 +1,13 @@
-## Description
-A private, backend web API based on RESTful principles that acts as an information resource on the internet. Specifically, this web API manages data about an academic conference. This has been created for the Software Architecture
-coursework using a dataset about the CHI 2023 conference held in Hamburg, Germany. The dataset provided information about content that was presented at the conference -- including details like
-their title, authors, DOI links and potential awards to name a few.
+<div align="center">
+  <h1>Web API</h1>
+</div>
 
-Designed to be used in frontend applications, this API allows clients to request various information about the conference - with clients able to both access and modify the database.
+This repository contains a private, backend API that was created for managing information about the CHI 2023 academic conference, which was held in Hamburg, Germany. The API was aimed to be incorporated by a frontend for a fictional software company, providing a secure interface to retrieve and modify data about the conference. 
 
-## Link to Documentation
-Link: https://documenter.getpostman.com/view/41846434/2sAYkErfZ6
+The API provides a total of x endpoints that are designed to retrieve and manipulate data from an SQLite database stored on an Apache server. The dataset provided information about content that was presented at the conference - including details such as their title, authors, DOI links and potential awards to name a few. Each endpoint is configured based on RESTful principles and made using PHP OOP, ensuring the codebase remains easily maintainable, scalable and easy to read. 
+
+---
+<h2>Link to Documentation </h2>
+The following link to Postman contains comprehensive documentation for how to utilise the API. Examples are furthermore provided to showcase potential usages.
+
+<br> Link: https://documenter.getpostman.com/view/41846434/2sAYkErfZ6

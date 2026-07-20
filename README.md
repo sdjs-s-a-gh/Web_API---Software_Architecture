@@ -4,7 +4,7 @@
 
 This repository contains a private, backend API that was created for managing information about the CHI 2023 academic conference, which was held in Hamburg, Germany. The API was aimed to be incorporated by a frontend for a fictional software company, providing a secure interface to retrieve and modify data about the conference. 
 
-The API provides a total of x endpoints that are designed to retrieve and manipulate data from an SQLite database stored on an Apache server. The dataset provided information about content that was presented at the conference - including details such as their title, authors, DOI links and potential awards to name a few. Each endpoint is configured based on RESTful principles and made using PHP OOP, ensuring the codebase remains easily maintainable, scalable and easy to read. 
+The API provides a total of five endpoints that are designed to retrieve and manipulate data from an SQLite database stored locally on an Apache server. The dataset, and by extension the API, provides information about content that was presented at the conference - including titles, authors, DOI links and potential awards to name a few. Each endpoint is configured based on RESTful principles and made using PHP OOP, ensuring the codebase remains easily maintainable, scalable and easy to read. 
 
 ---
 <h2>Link to Documentation </h2>

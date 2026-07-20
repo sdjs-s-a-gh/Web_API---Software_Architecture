@@ -9,6 +9,7 @@ The API provides a total of five endpoints that are designed to retrieve and man
 ---
 <h2>Background</h2>
 This project was developed as part of the "Software Architecure" module that was undertaken during my second year of university - throughout February to March 2025. The code was last updated on the 19th March 2025 at 8:11PM.
+
 ---
 <h2>Link to Documentation </h2>
 The following link to Postman contains comprehensive documentation for how to utilise the API. Examples are furthermore provided to showcase potential usages.
